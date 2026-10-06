@@ -1,0 +1,3 @@
+import Anthropic from '@anthropic-ai/sdk';
+const cache=new Map<string,{score:number,reason:string}>();
+export async function judge(expected:string,actual:string){const k=expected+'\n'+actual;if(cache.has(k))return cache.get(k)!;let r={score:expected.trim()===actual.trim()?1:0,reason:'Deterministic local judge'};if(process.env.ANTHROPIC_API_KEY){const c=new Anthropic({apiKey:process.env.ANTHROPIC_API_KEY});const x=await c.messages.create({model:process.env.ANTHROPIC_MODEL||'claude-3-5-haiku-20241022',max_tokens:120,temperature:0,messages:[{role:'user',content:`Return JSON {"score":0 or 1,"reason":"short"}. EXPECTED:${expected} ACTUAL:${actual}`} ]});const s=x.content.map(v=>'text' in v?v.text:'').join('');try{r=JSON.parse(s)}catch{}}cache.set(k,r);return r}
